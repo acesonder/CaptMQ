@@ -554,10 +554,15 @@
 
         // Load settings from localStorage
         function loadSettings() {
-            const saved = localStorage.getItem('outsinc-vr-settings');
-            if (saved) {
-                settings = JSON.parse(saved);
-                applySettingsToUI();
+            try {
+                const saved = localStorage.getItem('outsinc-vr-settings');
+                if (saved) {
+                    settings = JSON.parse(saved);
+                    applySettingsToUI();
+                }
+            } catch (error) {
+                console.error('Failed to load settings:', error);
+                // Keep default settings if loading fails
             }
         }
 
@@ -647,6 +652,7 @@
         let gl = null;
         let xrRefSpace = null;
         let animationFrameId = null;
+        let render2DId = null;
 
         // Start Pass Through Mode
         async function startPassThroughMode() {
@@ -810,12 +816,19 @@
 
         // 2D Fallback for testing without VR headset
         function start2DGame(gameType) {
+            // Stop any existing render loop
+            if (render2DId) {
+                cancelAnimationFrame(render2DId);
+                render2DId = null;
+            }
+            
             const canvas = document.getElementById('game-canvas');
             canvas.classList.add('active');
             
             // Get the canvas parent and replace it to clear WebGL context
             const parent = canvas.parentNode;
             const newCanvas = canvas.cloneNode(true);
+            newCanvas.id = 'game-canvas';
             parent.replaceChild(newCanvas, canvas);
             
             // Now work with the new canvas
@@ -835,7 +848,7 @@
                     render2DVRRoom(ctx);
                 }
 
-                requestAnimationFrame(render2D);
+                render2DId = requestAnimationFrame(render2D);
             }
 
             render2D();
@@ -886,9 +899,6 @@
         function onSessionEnded() {
             xrSession = null;
             xrRefSpace = null;
-            if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-            }
             backToMainMenu();
         }
 
@@ -897,7 +907,9 @@
             if (e.key === 'Escape' && currentGame) {
                 if (xrSession) {
                     xrSession.end();
-                } else {
+                } else if (render2DId) {
+                    cancelAnimationFrame(render2DId);
+                    render2DId = null;
                     backToMainMenu();
                 }
                 currentGame = null;
