@@ -739,7 +739,11 @@
         let animationFrameId = null;
         let render2DId = null;
 
+        // Audio context for sound effects (reused to avoid creating multiple contexts)
+        let audioContext = null;
+
         // Human Detector game state
+        const HD_INTERACTION_RADIUS = 0.5; // Radius for bubble popping interaction
         let hdGameState = {
             started: false,
             timeRemaining: 199,
@@ -1041,15 +1045,11 @@
             const pose = frame.getPose(inputSource.targetRaySpace, xrRefSpace);
             if (!pose) return;
 
-            // Ray from controller
+            // Ray from controller position
             const origin = pose.transform.position;
-            const direction = {
-                x: -pose.transform.orientation.x,
-                y: -pose.transform.orientation.y,
-                z: -pose.transform.orientation.z
-            };
 
-            // Check intersection with bubbles
+            // Check intersection with bubbles using simple distance check
+            // In production, this would use proper ray-sphere intersection
             for (let i = hdGameState.bubbles.length - 1; i >= 0; i--) {
                 const bubble = hdGameState.bubbles[i];
                 const distance = Math.sqrt(
@@ -1058,8 +1058,8 @@
                     Math.pow(bubble.z - origin.z, 2)
                 );
 
-                // Simple proximity check (would be ray-sphere intersection in production)
-                if (distance < bubble.radius + 0.5) {
+                // Simple proximity check
+                if (distance < bubble.radius + HD_INTERACTION_RADIUS) {
                     popBubble(i);
                     break;
                 }
@@ -1076,9 +1076,12 @@
         }
 
         function playDingSound() {
-            // Create a simple beep sound using Web Audio API
+            // Create or reuse audio context
             try {
-                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
                 const oscillator = audioContext.createOscillator();
                 const gainNode = audioContext.createGain();
 
