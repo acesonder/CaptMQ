@@ -946,7 +946,16 @@
             gameOver: false,
             detectedHumans: [],
             audioContext: null,
-            popSound: null
+            popSound: null,
+            last2DUpdate: null
+        };
+
+        // Human Detector game constants
+        const HUMAN_DETECTOR_CONFIG = {
+            INITIAL_COUNTDOWN: 199,
+            VR_SPAWN_PROBABILITY: 0.01,
+            TWOD_SPAWN_PROBABILITY: 0.02, // Higher in 2D for better visibility
+            HIT_PROBABILITY: 0.3
         };
 
         // Initialize audio for Human Detector
@@ -1015,7 +1024,7 @@
 
             // Simulate human detection (in production, this would use actual AR/CV)
             // For now, we'll create mock detected humans at random positions
-            if (humanDetectorState.gameStarted && !humanDetectorState.gameOver && Math.random() < 0.01) {
+            if (humanDetectorState.gameStarted && !humanDetectorState.gameOver && Math.random() < HUMAN_DETECTOR_CONFIG.VR_SPAWN_PROBABILITY) {
                 addMockHuman();
             }
 
@@ -1114,11 +1123,12 @@
         // Start Human Detector game
         function startHumanDetectorGame(time) {
             humanDetectorState.gameStarted = true;
-            humanDetectorState.countdown = 199;
+            humanDetectorState.countdown = HUMAN_DETECTOR_CONFIG.INITIAL_COUNTDOWN;
             humanDetectorState.score = 0;
             humanDetectorState.lastCountdownUpdate = time;
             humanDetectorState.gameOver = false;
             humanDetectorState.detectedHumans = [];
+            humanDetectorState.last2DUpdate = null;
             
             initHumanDetectorAudio();
             
@@ -1134,7 +1144,7 @@
             // For now, simplified collision detection
             
             // Simulate successful hit on random bubble
-            if (humanDetectorState.detectedHumans.length > 0 && Math.random() < 0.3) {
+            if (humanDetectorState.detectedHumans.length > 0 && Math.random() < HUMAN_DETECTOR_CONFIG.HIT_PROBABILITY) {
                 const randomIndex = Math.floor(Math.random() * humanDetectorState.detectedHumans.length);
                 const human = humanDetectorState.detectedHumans[randomIndex];
                 
@@ -1174,14 +1184,15 @@
         // Reset Human Detector game state
         function resetHumanDetectorGame() {
             humanDetectorState.gameStarted = false;
-            humanDetectorState.countdown = 199;
+            humanDetectorState.countdown = HUMAN_DETECTOR_CONFIG.INITIAL_COUNTDOWN;
             humanDetectorState.score = 0;
             humanDetectorState.lastCountdownUpdate = 0;
             humanDetectorState.gameOver = false;
             humanDetectorState.detectedHumans = [];
+            humanDetectorState.last2DUpdate = null;
             
             document.getElementById('human-detector-ui').classList.remove('active');
-            document.getElementById('countdown-timer').textContent = '199';
+            document.getElementById('countdown-timer').textContent = HUMAN_DETECTOR_CONFIG.INITIAL_COUNTDOWN;
             document.getElementById('score-display').textContent = '0';
             document.getElementById('press-x-prompt').style.display = 'block';
             document.getElementById('game-over-screen').classList.remove('active');
@@ -1300,7 +1311,7 @@
                 document.getElementById('press-x-prompt').style.display = 'none';
 
                 // Add mock humans occasionally
-                if (Math.random() < 0.02) {
+                if (Math.random() < HUMAN_DETECTOR_CONFIG.TWOD_SPAWN_PROBABILITY) {
                     addMockHuman();
                 }
             } else if (!humanDetectorState.gameOver) {
@@ -1343,7 +1354,9 @@
                 } else if (render2DId) {
                     cancelAnimationFrame(render2DId);
                     render2DId = null;
-                    resetHumanDetectorGame();
+                    if (currentGame === 'humandetector') {
+                        resetHumanDetectorGame();
+                    }
                     backToMainMenu();
                 }
                 currentGame = null;
