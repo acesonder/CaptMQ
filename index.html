@@ -13,7 +13,7 @@
         }
 
         body {
-            font-family: 'Gothic', 'Old English Text MT', serif;
+            font-family: 'Cinzel', 'Crimson Text', 'Old English Text MT', 'Times New Roman', serif;
             overflow: hidden;
             width: 100vw;
             height: 100vh;
@@ -193,12 +193,17 @@
             background: white;
             border-radius: 50%;
             box-shadow: 0 0 5px rgba(255, 255, 255, 0.8);
-            animation: twinkle 3s ease-in-out infinite;
+            animation: twinkle 3s ease-in-out infinite, moveStars 10s linear infinite;
         }
 
         @keyframes twinkle {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.3; transform: scale(0.8); }
+        }
+
+        @keyframes moveStars {
+            0% { transform: translateX(0) translateY(0); }
+            100% { transform: translateX(-5px) translateY(5px); }
         }
 
         .star1 { width: 2px; height: 2px; top: 10%; left: 15%; animation-delay: 0s; }
@@ -211,16 +216,6 @@
         .star8 { width: 3px; height: 3px; top: 15%; left: 50%; animation-delay: 1.2s; }
         .star9 { width: 2px; height: 2px; top: 45%; left: 10%; animation-delay: 1.8s; }
         .star10 { width: 3px; height: 3px; top: 70%; left: 85%; animation-delay: 2.3s; }
-
-        /* Moving stars animation */
-        @keyframes moveStars {
-            0% { transform: translateX(0) translateY(0); }
-            100% { transform: translateX(-5px) translateY(5px); }
-        }
-
-        .star {
-            animation: twinkle 3s ease-in-out infinite, moveStars 10s linear infinite;
-        }
 
         /* Menu Container */
         .menu-container {
@@ -332,7 +327,8 @@
         function quitGame() {
             console.log('Quitting game...');
             if (confirm('Are you sure you want to quit?')) {
-                window.close();
+                // In VR browsers, window.close() may not work, so redirect to a safe page
+                window.location.href = 'about:blank';
             }
         }
 
@@ -352,11 +348,6 @@
         // Handle VR controller input
         window.addEventListener('gamepadconnected', (e) => {
             console.log('Gamepad connected:', e.gamepad);
-        });
-
-        // Prevent accidental back navigation on VR devices
-        window.addEventListener('popstate', (e) => {
-            e.preventDefault();
         });
 
         // Add touch support for VR controllers
