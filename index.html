@@ -252,6 +252,107 @@
             transform: scale(1.05);
         }
 
+        /* Game Selection Menu */
+        #game-selection {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            animation: fadeInMenu 2s ease-in-out;
+        }
+
+        #game-selection.active {
+            display: flex;
+        }
+
+        /* Settings Menu */
+        #settings-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(to bottom, #0a0a1a 0%, #1a1a2e 50%, #0a0a1a 100%);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            animation: fadeInMenu 2s ease-in-out;
+            overflow-y: auto;
+            padding: 20px;
+        }
+
+        #settings-menu.active {
+            display: flex;
+        }
+
+        .settings-container {
+            max-width: 800px;
+            width: 90%;
+            color: white;
+            z-index: 10;
+        }
+
+        .settings-section {
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 10px;
+        }
+
+        .settings-section h2 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-family: 'Impact', 'Gothic', 'Haettenschweiler', 'Arial Black', sans-serif;
+            text-transform: uppercase;
+        }
+
+        .setting-item {
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .setting-item label {
+            font-size: 20px;
+            flex: 1;
+        }
+
+        .setting-item select,
+        .setting-item input[type="range"] {
+            flex: 1;
+            max-width: 300px;
+            font-size: 18px;
+            padding: 5px;
+        }
+
+        .setting-value {
+            min-width: 50px;
+            text-align: center;
+            font-size: 20px;
+            margin-left: 10px;
+        }
+
+        /* Game Canvas */
+        #game-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none;
+        }
+
+        #game-canvas.active {
+            display: block;
+        }
+
         /* VR-specific styles */
         @media (hover: none) and (pointer: coarse) {
             .menu-item {
@@ -302,26 +403,229 @@
         </div>
     </div>
 
+    <!-- Game Selection Menu -->
+    <div id="game-selection">
+        <!-- Stars -->
+        <div class="star star1"></div>
+        <div class="star star2"></div>
+        <div class="star star3"></div>
+        <div class="star star4"></div>
+        <div class="star star5"></div>
+        <div class="star star6"></div>
+        <div class="star star7"></div>
+        <div class="star star8"></div>
+        <div class="star star9"></div>
+        <div class="star star10"></div>
+
+        <!-- Game Selection Items -->
+        <div class="menu-container">
+            <div class="menu-item" onclick="startPassThroughMode()">Pass Through Mode</div>
+            <div class="menu-item" onclick="startSnowboarding()">Snowboarding</div>
+            <div class="menu-item" onclick="startVRRoom()">Virtual Reality Room</div>
+            <div class="menu-item" onclick="backToMainMenu()">Back to Main Menu</div>
+        </div>
+    </div>
+
+    <!-- Settings Menu -->
+    <div id="settings-menu">
+        <!-- Stars -->
+        <div class="star star1"></div>
+        <div class="star star2"></div>
+        <div class="star star3"></div>
+        <div class="star star4"></div>
+        <div class="star star5"></div>
+        <div class="star star6"></div>
+        <div class="star star7"></div>
+        <div class="star star8"></div>
+        <div class="star star9"></div>
+        <div class="star star10"></div>
+
+        <!-- Settings Content -->
+        <div class="settings-container">
+            <h1 style="text-align: center; font-size: 60px; margin-bottom: 40px; font-family: 'Impact', 'Gothic', 'Haettenschweiler', 'Arial Black', sans-serif;">SETTINGS</h1>
+            
+            <!-- Pass Through Mode Settings -->
+            <div class="settings-section">
+                <h2>Pass Through Mode</h2>
+                <div class="setting-item">
+                    <label for="ball-spawn-rate">Ball Spawn Rate:</label>
+                    <input type="range" id="ball-spawn-rate" min="1" max="10" value="5" oninput="updateSettingValue('ball-spawn-rate-value', this.value)">
+                    <span class="setting-value" id="ball-spawn-rate-value">5</span>
+                </div>
+                <div class="setting-item">
+                    <label for="physics-strength">Physics Strength:</label>
+                    <input type="range" id="physics-strength" min="1" max="10" value="7" oninput="updateSettingValue('physics-strength-value', this.value)">
+                    <span class="setting-value" id="physics-strength-value">7</span>
+                </div>
+                <div class="setting-item">
+                    <label for="ball-types">Ball Types:</label>
+                    <select id="ball-types">
+                        <option value="both">Both</option>
+                        <option value="tennis">Tennis Only</option>
+                        <option value="basketball">Basketball Only</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Snowboarding Settings -->
+            <div class="settings-section">
+                <h2>Snowboarding</h2>
+                <div class="setting-item">
+                    <label for="difficulty">Difficulty:</label>
+                    <select id="difficulty">
+                        <option value="easy">Easy</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="hard">Hard</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="control-sensitivity">Control Sensitivity:</label>
+                    <input type="range" id="control-sensitivity" min="1" max="10" value="5" oninput="updateSettingValue('control-sensitivity-value', this.value)">
+                    <span class="setting-value" id="control-sensitivity-value">5</span>
+                </div>
+                <div class="setting-item">
+                    <label for="trick-assist">Trick Assist:</label>
+                    <select id="trick-assist">
+                        <option value="on">On</option>
+                        <option value="off">Off</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- VR Room Settings -->
+            <div class="settings-section">
+                <h2>Virtual Reality Room</h2>
+                <div class="setting-item">
+                    <label for="room-brightness">Room Brightness:</label>
+                    <input type="range" id="room-brightness" min="1" max="10" value="3" oninput="updateSettingValue('room-brightness-value', this.value)">
+                    <span class="setting-value" id="room-brightness-value">3</span>
+                </div>
+                <div class="setting-item">
+                    <label for="interaction-mode">Interaction Mode:</label>
+                    <select id="interaction-mode">
+                        <option value="pointer">Pointer</option>
+                        <option value="grab" selected>Grab</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label for="texture-quality">Texture Quality:</label>
+                    <select id="texture-quality">
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high" selected>High</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <div class="menu-item" onclick="saveSettings()">Save Settings</div>
+                <div class="menu-item" onclick="backToMainMenu()">Back to Main Menu</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Canvas -->
+    <canvas id="game-canvas"></canvas>
+
     <script>
         // Show main menu after splash screen
         setTimeout(() => {
             document.getElementById('main-menu').classList.add('active');
         }, 9000); // 3s display + 6s fade out
 
-        // Menu functions
+        // Settings state
+        let settings = {
+            passThroughMode: {
+                ballSpawnRate: 5,
+                physicsStrength: 7,
+                ballTypes: 'both'
+            },
+            snowboarding: {
+                difficulty: 'medium',
+                controlSensitivity: 5,
+                trickAssist: 'on'
+            },
+            vrRoom: {
+                roomBrightness: 3,
+                interactionMode: 'grab',
+                textureQuality: 'high'
+            }
+        };
+
+        // Load settings from localStorage
+        function loadSettings() {
+            const saved = localStorage.getItem('outsinc-vr-settings');
+            if (saved) {
+                settings = JSON.parse(saved);
+                applySettingsToUI();
+            }
+        }
+
+        // Apply settings to UI
+        function applySettingsToUI() {
+            document.getElementById('ball-spawn-rate').value = settings.passThroughMode.ballSpawnRate;
+            document.getElementById('ball-spawn-rate-value').textContent = settings.passThroughMode.ballSpawnRate;
+            document.getElementById('physics-strength').value = settings.passThroughMode.physicsStrength;
+            document.getElementById('physics-strength-value').textContent = settings.passThroughMode.physicsStrength;
+            document.getElementById('ball-types').value = settings.passThroughMode.ballTypes;
+            
+            document.getElementById('difficulty').value = settings.snowboarding.difficulty;
+            document.getElementById('control-sensitivity').value = settings.snowboarding.controlSensitivity;
+            document.getElementById('control-sensitivity-value').textContent = settings.snowboarding.controlSensitivity;
+            document.getElementById('trick-assist').value = settings.snowboarding.trickAssist;
+            
+            document.getElementById('room-brightness').value = settings.vrRoom.roomBrightness;
+            document.getElementById('room-brightness-value').textContent = settings.vrRoom.roomBrightness;
+            document.getElementById('interaction-mode').value = settings.vrRoom.interactionMode;
+            document.getElementById('texture-quality').value = settings.vrRoom.textureQuality;
+        }
+
+        // Update setting value display
+        function updateSettingValue(elementId, value) {
+            document.getElementById(elementId).textContent = value;
+        }
+
+        // Save settings
+        function saveSettings() {
+            settings.passThroughMode.ballSpawnRate = parseInt(document.getElementById('ball-spawn-rate').value);
+            settings.passThroughMode.physicsStrength = parseInt(document.getElementById('physics-strength').value);
+            settings.passThroughMode.ballTypes = document.getElementById('ball-types').value;
+            
+            settings.snowboarding.difficulty = document.getElementById('difficulty').value;
+            settings.snowboarding.controlSensitivity = parseInt(document.getElementById('control-sensitivity').value);
+            settings.snowboarding.trickAssist = document.getElementById('trick-assist').value;
+            
+            settings.vrRoom.roomBrightness = parseInt(document.getElementById('room-brightness').value);
+            settings.vrRoom.interactionMode = document.getElementById('interaction-mode').value;
+            settings.vrRoom.textureQuality = document.getElementById('texture-quality').value;
+            
+            localStorage.setItem('outsinc-vr-settings', JSON.stringify(settings));
+            alert('Settings saved successfully!');
+        }
+
+        // Menu navigation functions
+        function hideAllScreens() {
+            document.getElementById('main-menu').classList.remove('active');
+            document.getElementById('game-selection').classList.remove('active');
+            document.getElementById('settings-menu').classList.remove('active');
+            document.getElementById('game-canvas').classList.remove('active');
+        }
+
         function startNewGame() {
             console.log('Starting new game...');
-            alert('New Game - Game functionality would be implemented here');
+            hideAllScreens();
+            document.getElementById('game-selection').classList.add('active');
         }
 
         function openSettings() {
             console.log('Opening settings...');
-            alert('Settings - Settings menu would be implemented here');
+            hideAllScreens();
+            document.getElementById('settings-menu').classList.add('active');
         }
 
         function openOptions() {
             console.log('Opening options...');
-            alert('Options - Options menu would be implemented here');
+            alert('Options - Additional options would be implemented here');
         }
 
         function quitGame() {
@@ -331,6 +635,267 @@
                 window.location.href = 'about:blank';
             }
         }
+
+        function backToMainMenu() {
+            hideAllScreens();
+            document.getElementById('main-menu').classList.add('active');
+        }
+
+        // Game state
+        let currentGame = null;
+        let xrSession = null;
+        let gl = null;
+        let xrRefSpace = null;
+        let animationFrameId = null;
+
+        // Start Pass Through Mode
+        async function startPassThroughMode() {
+            console.log('Starting Pass Through Mode...');
+            currentGame = 'passthrough';
+            await initializeWebXR('passthrough');
+        }
+
+        // Start Snowboarding
+        async function startSnowboarding() {
+            console.log('Starting Snowboarding...');
+            currentGame = 'snowboarding';
+            await initializeWebXR('snowboarding');
+        }
+
+        // Start VR Room
+        async function startVRRoom() {
+            console.log('Starting Virtual Reality Room...');
+            currentGame = 'vrroom';
+            await initializeWebXR('vrroom');
+        }
+
+        // Initialize WebXR session
+        async function initializeWebXR(gameType) {
+            if (!navigator.xr) {
+                alert('WebXR not supported. Please use a VR-capable browser.');
+                return;
+            }
+
+            try {
+                hideAllScreens();
+                const canvas = document.getElementById('game-canvas');
+                canvas.classList.add('active');
+                gl = canvas.getContext('webgl', { xrCompatible: true });
+
+                if (!gl) {
+                    alert('WebGL not supported');
+                    return;
+                }
+
+                // Request XR session based on game type
+                const sessionInit = {
+                    requiredFeatures: ['local-floor']
+                };
+
+                if (gameType === 'passthrough') {
+                    // Pass through mode requires AR features if available
+                    sessionInit.optionalFeatures = ['dom-overlay'];
+                }
+
+                xrSession = await navigator.xr.requestSession('immersive-vr', sessionInit);
+                
+                await gl.makeXRCompatible();
+                
+                xrSession.updateRenderState({
+                    baseLayer: new XRWebGLLayer(xrSession, gl)
+                });
+
+                xrRefSpace = await xrSession.requestReferenceSpace('local-floor');
+
+                // Start the render loop
+                xrSession.requestAnimationFrame(onXRFrame);
+
+                // Handle session end
+                xrSession.addEventListener('end', onSessionEnded);
+
+                console.log(`${gameType} session started`);
+            } catch (error) {
+                console.error('Error starting XR session:', error);
+                alert(`Failed to start VR session: ${error.message}\n\nFalling back to 2D preview mode.`);
+                // Fallback to 2D rendering
+                start2DGame(gameType);
+            }
+        }
+
+        // XR Frame callback
+        function onXRFrame(time, frame) {
+            const session = frame.session;
+            animationFrameId = session.requestAnimationFrame(onXRFrame);
+
+            const pose = frame.getViewerPose(xrRefSpace);
+            
+            if (pose) {
+                const glLayer = session.renderState.baseLayer;
+                gl.bindFramebuffer(gl.FRAMEBUFFER, glLayer.framebuffer);
+                
+                // Render based on current game
+                if (currentGame === 'passthrough') {
+                    renderPassThroughMode(time, frame, pose);
+                } else if (currentGame === 'snowboarding') {
+                    renderSnowboarding(time, frame, pose);
+                } else if (currentGame === 'vrroom') {
+                    renderVRRoom(time, frame, pose);
+                }
+            }
+        }
+
+        // Game rendering functions
+        function renderPassThroughMode(time, frame, pose) {
+            // Clear the canvas
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+
+            for (const view of pose.views) {
+                const viewport = frame.session.renderState.baseLayer.getViewport(view);
+                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+
+                // Render balls and physics simulation
+                // (Simplified - in production this would use a full 3D engine like Three.js)
+                renderBalls(view);
+            }
+        }
+
+        function renderSnowboarding(time, frame, pose) {
+            // Clear with sky blue
+            gl.clearColor(0.53, 0.81, 0.92, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+
+            for (const view of pose.views) {
+                const viewport = frame.session.renderState.baseLayer.getViewport(view);
+                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+
+                // Render snowboarding scene
+                renderSnowScene(view, time);
+            }
+        }
+
+        function renderVRRoom(time, frame, pose) {
+            // Clear with dark color
+            const brightness = settings.vrRoom.roomBrightness / 10;
+            gl.clearColor(0.05 * brightness, 0.05 * brightness, 0.05 * brightness, 1.0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+
+            for (const view of pose.views) {
+                const viewport = frame.session.renderState.baseLayer.getViewport(view);
+                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+
+                // Render dark room scene
+                renderDarkRoom(view);
+            }
+        }
+
+        // Simplified rendering functions (would use Three.js or similar in production)
+        function renderBalls(view) {
+            // Placeholder for ball rendering
+            // In production, this would render 3D spheres with physics
+        }
+
+        function renderSnowScene(view, time) {
+            // Placeholder for snowboarding scene
+            // In production, this would render terrain, snow, sky, etc.
+        }
+
+        function renderDarkRoom(view) {
+            // Placeholder for dark room
+            // In production, this would render walls, doors, furniture with realistic textures
+        }
+
+        // 2D Fallback for testing without VR headset
+        function start2DGame(gameType) {
+            const canvas = document.getElementById('game-canvas');
+            canvas.classList.add('active');
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            function render2D() {
+                if (!ctx) return;
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (gameType === 'passthrough') {
+                    render2DPassThrough(ctx);
+                } else if (gameType === 'snowboarding') {
+                    render2DSnowboarding(ctx);
+                } else if (gameType === 'vrroom') {
+                    render2DVRRoom(ctx);
+                }
+
+                requestAnimationFrame(render2D);
+            }
+
+            render2D();
+        }
+
+        function render2DPassThrough(ctx) {
+            // Draw simple preview
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.fillStyle = 'black';
+            ctx.font = '48px Impact';
+            ctx.textAlign = 'center';
+            ctx.fillText('PASS THROUGH MODE', ctx.canvas.width / 2, ctx.canvas.height / 2 - 100);
+            ctx.font = '24px Arial';
+            ctx.fillText('Mixed Reality: Throw balls that bounce off real-world objects', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            ctx.fillText('Press ESC to return to menu', ctx.canvas.width / 2, ctx.canvas.height / 2 + 50);
+        }
+
+        function render2DSnowboarding(ctx) {
+            // Draw simple preview
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, ctx.canvas.height * 0.6, ctx.canvas.width, ctx.canvas.height * 0.4);
+            ctx.fillStyle = 'black';
+            ctx.font = '48px Impact';
+            ctx.textAlign = 'center';
+            ctx.fillText('SNOWBOARDING', ctx.canvas.width / 2, ctx.canvas.height / 2 - 100);
+            ctx.font = '24px Arial';
+            ctx.fillText('Ride down a snowy mountain performing tricks!', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            ctx.fillText('Press ESC to return to menu', ctx.canvas.width / 2, ctx.canvas.height / 2 + 50);
+        }
+
+        function render2DVRRoom(ctx) {
+            const brightness = settings.vrRoom.roomBrightness / 10;
+            ctx.fillStyle = `rgb(${13 * brightness}, ${13 * brightness}, ${13 * brightness})`;
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+            ctx.fillStyle = 'white';
+            ctx.font = '48px Impact';
+            ctx.textAlign = 'center';
+            ctx.fillText('VIRTUAL REALITY ROOM', ctx.canvas.width / 2, ctx.canvas.height / 2 - 100);
+            ctx.font = '24px Arial';
+            ctx.fillText('Dark room with realistic furniture and 4 doors', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            ctx.fillText('Press ESC to return to menu', ctx.canvas.width / 2, ctx.canvas.height / 2 + 50);
+        }
+
+        // Session end handler
+        function onSessionEnded() {
+            xrSession = null;
+            xrRefSpace = null;
+            if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+            }
+            backToMainMenu();
+        }
+
+        // Handle ESC key to exit games
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && currentGame) {
+                if (xrSession) {
+                    xrSession.end();
+                } else {
+                    backToMainMenu();
+                }
+                currentGame = null;
+            }
+        });
 
         // WebXR support check
         if ('xr' in navigator) {
@@ -359,6 +924,9 @@
                 this.style.transform = 'scale(1)';
             });
         });
+
+        // Load settings on page load
+        loadSettings();
     </script>
 </body>
 </html>
