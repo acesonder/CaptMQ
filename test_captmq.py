@@ -193,7 +193,9 @@ class TestRetryMechanism(unittest.TestCase):
         
         self.assertEqual(stats['succeeded'], 2)
         self.assertEqual(stats['dead_lettered'], 1)
-        self.assertEqual(stats['processed'], 5)  # 3 initial + 2 retries (test-2 retried twice)
+        # Initial 3 messages + retries (test-2 fails and retries max_retries times)
+        expected_processed = 3 + self.retry_policy.max_retries - 1
+        self.assertEqual(stats['processed'], expected_processed)
     
     def test_should_retry(self):
         """Test should_retry logic"""

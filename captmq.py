@@ -2,15 +2,14 @@
 CaptMQ - A simple message queue with retry mechanism
 """
 import time
+import random
 import logging
 from dataclasses import dataclass, field
 from typing import Callable, Any, Optional, List
 from enum import Enum
 from collections import deque
-import traceback
 
 
-logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
@@ -51,8 +50,6 @@ class RetryPolicy:
     
     def get_delay(self, retry_count: int) -> float:
         """Calculate delay for the given retry attempt"""
-        import random
-        
         # Calculate exponential backoff
         delay = min(
             self.initial_delay * (self.exponential_base ** retry_count),
@@ -160,7 +157,8 @@ class MessageQueue:
                     stats['dead_lettered'] += 1
             
             # Add delay between processing to implement backoff
-            if not success and message.should_retry():
+            if not success and message.status == MessageStatus.PENDING:
+                # Message was re-queued for retry
                 delay = self.retry_policy.get_delay(message.retry_count - 1)
                 time.sleep(delay)
             else:
