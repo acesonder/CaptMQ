@@ -369,6 +369,78 @@
             width: 100%;
             height: 100%;
         }
+
+        /* Human Detector Game UI */
+        #human-detector-ui {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            display: none;
+            z-index: 100;
+        }
+
+        #human-detector-ui.active {
+            display: block;
+        }
+
+        #hd-countdown {
+            position: absolute;
+            top: 50px;
+            left: 50%;
+            transform: translateX(-50%);
+            font-size: 60px;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            font-family: 'Impact', 'Gothic', 'Haettenschweiler', 'Arial Black', sans-serif;
+        }
+
+        #hd-start-prompt {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(255, 255, 255, 0.9);
+            padding: 30px 50px;
+            border-radius: 20px;
+            font-size: 36px;
+            color: black;
+            text-shadow: none;
+            font-family: 'Impact', 'Gothic', 'Haettenschweiler', 'Arial Black', sans-serif;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+        }
+
+        #hd-score {
+            position: absolute;
+            bottom: 50px;
+            right: 50px;
+            font-size: 48px;
+            color: white;
+            text-shadow: 0 0 10px rgba(0, 0, 0, 0.8);
+            font-family: 'Impact', 'Gothic', 'Haettenschweiler', 'Arial Black', sans-serif;
+        }
+
+        #hd-final-score {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9);
+            padding: 50px 80px;
+            border-radius: 20px;
+            font-size: 48px;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+            font-family: 'Impact', 'Gothic', 'Haettenschweiler', 'Arial Black', sans-serif;
+            text-align: center;
+            display: none;
+        }
+
+        #hd-final-score.active {
+            display: block;
+        }
     </style>
 </head>
 <body>
@@ -422,6 +494,7 @@
             <div class="menu-item" onclick="startPassThroughMode()">Pass Through Mode</div>
             <div class="menu-item" onclick="startSnowboarding()">Snowboarding</div>
             <div class="menu-item" onclick="startVRRoom()">Virtual Reality Room</div>
+            <div class="menu-item" onclick="startHumanDetector()">HUMAN detector</div>
             <div class="menu-item" onclick="backToMainMenu()">Back to Main Menu</div>
         </div>
     </div>
@@ -526,6 +599,18 @@
 
     <!-- Game Canvas -->
     <canvas id="game-canvas"></canvas>
+
+    <!-- Human Detector UI Overlay -->
+    <div id="human-detector-ui">
+        <div id="hd-countdown">199</div>
+        <div id="hd-start-prompt">Press X to start</div>
+        <div id="hd-score">0</div>
+        <div id="hd-final-score">
+            <div>Time's Up!</div>
+            <div style="margin-top: 20px;">Final Score: <span id="hd-final-score-value">0</span></div>
+            <div style="margin-top: 30px; font-size: 24px;">Press ESC to return to menu</div>
+        </div>
+    </div>
 
     <script>
         // Show main menu after splash screen
@@ -654,6 +739,22 @@
         let animationFrameId = null;
         let render2DId = null;
 
+        // Audio context for sound effects (reused to avoid creating multiple contexts)
+        let audioContext = null;
+
+        // Human Detector game state
+        const HD_INTERACTION_RADIUS = 0.5; // Radius for bubble popping interaction
+        let hdGameState = {
+            started: false,
+            timeRemaining: 199,
+            score: 0,
+            startTime: null,
+            gameOverShown: false,
+            bubbles: [], // Array of bubbles {x, y, z, targetId}
+            detectedHumans: [], // Simulated human positions
+            lastHumanSpawn: 0
+        };
+
         // Start Pass Through Mode
         async function startPassThroughMode() {
             console.log('Starting Pass Through Mode...');
@@ -673,6 +774,13 @@
             console.log('Starting Virtual Reality Room...');
             currentGame = 'vrroom';
             await initializeWebXR('vrroom');
+        }
+
+        // Start Human Detector
+        async function startHumanDetector() {
+            console.log('Starting HUMAN detector...');
+            currentGame = 'humandetector';
+            await initializeWebXR('humandetector');
         }
 
         // Initialize WebXR session
@@ -701,6 +809,9 @@
                 if (gameType === 'passthrough') {
                     // Pass through mode requires AR features if available
                     sessionInit.optionalFeatures = ['dom-overlay'];
+                } else if (gameType === 'humandetector') {
+                    // Human detector needs AR/MR features for passthrough
+                    sessionInit.optionalFeatures = ['dom-overlay', 'hit-test', 'anchors'];
                 }
 
                 xrSession = await navigator.xr.requestSession('immersive-vr', sessionInit);
@@ -746,6 +857,8 @@
                     renderSnowboarding(time, frame, pose);
                 } else if (currentGame === 'vrroom') {
                     renderVRRoom(time, frame, pose);
+                } else if (currentGame === 'humandetector') {
+                    renderHumanDetector(time, frame, pose);
                 }
             }
         }
@@ -814,6 +927,202 @@
             // In production, this would render walls, doors, furniture with realistic textures
         }
 
+        function renderHumanDetector(time, frame, pose) {
+            // Clear with transparent for passthrough
+            gl.clearColor(0, 0, 0, 0);
+            gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
+            gl.enable(gl.DEPTH_TEST);
+
+            // Show UI overlay
+            const hdUI = document.getElementById('human-detector-ui');
+            if (!hdUI.classList.contains('active')) {
+                hdUI.classList.add('active');
+            }
+
+            // Update game logic
+            updateHumanDetectorGame(time);
+
+            for (const view of pose.views) {
+                const viewport = frame.session.renderState.baseLayer.getViewport(view);
+                gl.viewport(viewport.x, viewport.y, viewport.width, viewport.height);
+
+                // Render bubbles over detected humans
+                renderHumanBubbles(view);
+            }
+
+            // Handle controller input
+            handleHumanDetectorInput(frame);
+        }
+
+        function updateHumanDetectorGame(time) {
+            if (!hdGameState.started) {
+                return;
+            }
+
+            const elapsed = (time - hdGameState.startTime) / 1000;
+            hdGameState.timeRemaining = Math.max(0, 199 - Math.floor(elapsed));
+
+            // Update countdown display
+            document.getElementById('hd-countdown').textContent = hdGameState.timeRemaining;
+
+            // Check if game over
+            if (hdGameState.timeRemaining === 0 && !hdGameState.gameOverShown) {
+                endHumanDetectorGame();
+            }
+
+            // Simulate human detection - spawn bubbles at random positions
+            // In production, this would use actual computer vision/ML for human detection
+            if (time - hdGameState.lastHumanSpawn > 3000 && hdGameState.bubbles.length < 5) {
+                spawnHumanBubble();
+                hdGameState.lastHumanSpawn = time;
+            }
+        }
+
+        function spawnHumanBubble() {
+            // Generate random position in front of player
+            const angle = (Math.random() - 0.5) * Math.PI * 0.8; // ±72 degrees
+            const distance = 1 + Math.random() * 2; // 1-3 meters away
+            const x = Math.sin(angle) * distance;
+            const y = 1.5 + (Math.random() - 0.5) * 0.3; // Head height ~1.5m
+            const z = -Math.cos(angle) * distance;
+
+            hdGameState.bubbles.push({
+                id: Date.now() + Math.random(),
+                x: x,
+                y: y,
+                z: z,
+                velocityX: (Math.random() - 0.5) * 0.01,
+                velocityY: 0,
+                velocityZ: (Math.random() - 0.5) * 0.01,
+                radius: 0.15
+            });
+        }
+
+        function renderHumanBubbles(view) {
+            // Placeholder - would render 3D spheres in production
+            // For now, just update bubble positions
+            hdGameState.bubbles.forEach(bubble => {
+                bubble.x += bubble.velocityX;
+                bubble.z += bubble.velocityZ;
+            });
+        }
+
+        function handleHumanDetectorInput(frame) {
+            if (!xrSession || !hdGameState.started) return;
+
+            // Check for X button press to start or pop bubbles
+            const inputSources = xrSession.inputSources;
+            for (const inputSource of inputSources) {
+                if (inputSource.gamepad) {
+                    const gamepad = inputSource.gamepad;
+                    
+                    // Check X button (typically button 4) or trigger (button 0)
+                    if (gamepad.buttons[4]?.pressed || gamepad.buttons[0]?.pressed) {
+                        if (!hdGameState.started) {
+                            startHumanDetectorGameplay();
+                        } else {
+                            checkBubblePop(inputSource, frame);
+                        }
+                    }
+                }
+            }
+        }
+
+        function startHumanDetectorGameplay() {
+            hdGameState.started = true;
+            hdGameState.startTime = performance.now();
+            hdGameState.score = 0;
+            hdGameState.gameOverShown = false;
+            hdGameState.bubbles = [];
+            hdGameState.lastHumanSpawn = 0;
+            
+            document.getElementById('hd-start-prompt').style.display = 'none';
+            document.getElementById('hd-score').textContent = '0';
+        }
+
+        function checkBubblePop(inputSource, frame) {
+            // Get controller pose
+            const pose = frame.getPose(inputSource.targetRaySpace, xrRefSpace);
+            if (!pose) return;
+
+            // Ray from controller position
+            const origin = pose.transform.position;
+
+            // Check intersection with bubbles using simple distance check
+            // In production, this would use proper ray-sphere intersection
+            for (let i = hdGameState.bubbles.length - 1; i >= 0; i--) {
+                const bubble = hdGameState.bubbles[i];
+                const distance = Math.sqrt(
+                    Math.pow(bubble.x - origin.x, 2) +
+                    Math.pow(bubble.y - origin.y, 2) +
+                    Math.pow(bubble.z - origin.z, 2)
+                );
+
+                // Simple proximity check
+                if (distance < bubble.radius + HD_INTERACTION_RADIUS) {
+                    popBubble(i);
+                    break;
+                }
+            }
+        }
+
+        function popBubble(index) {
+            hdGameState.bubbles.splice(index, 1);
+            hdGameState.score++;
+            document.getElementById('hd-score').textContent = hdGameState.score;
+            
+            // Play ding sound
+            playDingSound();
+        }
+
+        function playDingSound() {
+            // Create or reuse audio context
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+                
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800; // 800 Hz
+                oscillator.type = 'sine';
+
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.2);
+            } catch (error) {
+                console.error('Failed to play sound:', error);
+            }
+        }
+
+        function endHumanDetectorGame() {
+            hdGameState.gameOverShown = true;
+            document.getElementById('hd-final-score-value').textContent = hdGameState.score;
+            document.getElementById('hd-final-score').classList.add('active');
+        }
+
+        function resetHumanDetectorGame() {
+            hdGameState.started = false;
+            hdGameState.timeRemaining = 199;
+            hdGameState.score = 0;
+            hdGameState.startTime = null;
+            hdGameState.gameOverShown = false;
+            hdGameState.bubbles = [];
+            hdGameState.lastHumanSpawn = 0;
+            
+            document.getElementById('hd-countdown').textContent = '199';
+            document.getElementById('hd-start-prompt').style.display = 'block';
+            document.getElementById('hd-score').textContent = '0';
+            document.getElementById('hd-final-score').classList.remove('active');
+            document.getElementById('human-detector-ui').classList.remove('active');
+        }
+
         // 2D Fallback for testing without VR headset
         function start2DGame(gameType) {
             // Stop any existing render loop
@@ -846,6 +1155,8 @@
                     render2DSnowboarding(ctx);
                 } else if (gameType === 'vrroom') {
                     render2DVRRoom(ctx);
+                } else if (gameType === 'humandetector') {
+                    render2DHumanDetector(ctx);
                 }
 
                 render2DId = requestAnimationFrame(render2D);
@@ -895,6 +1206,52 @@
             ctx.fillText('Press ESC to return to menu', ctx.canvas.width / 2, ctx.canvas.height / 2 + 50);
         }
 
+        function render2DHumanDetector(ctx) {
+            // Show UI overlay
+            const hdUI = document.getElementById('human-detector-ui');
+            if (!hdUI.classList.contains('active')) {
+                hdUI.classList.add('active');
+            }
+
+            // Draw passthrough-like background
+            ctx.fillStyle = '#87CEEB';
+            ctx.fillRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+            // Update game state
+            const currentTime = performance.now();
+            updateHumanDetectorGame(currentTime);
+
+            // Draw bubbles
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.lineWidth = 3;
+
+            hdGameState.bubbles.forEach(bubble => {
+                // Convert 3D position to 2D screen position (simple projection)
+                const screenX = ctx.canvas.width / 2 + (bubble.x * 200);
+                const screenY = ctx.canvas.height / 2 - (bubble.y * 200) + (bubble.z * 50);
+                const screenRadius = Math.max(20, 50 / (Math.abs(bubble.z) + 1));
+
+                ctx.beginPath();
+                ctx.arc(screenX, screenY, screenRadius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+            });
+
+            // Draw instructions
+            if (!hdGameState.started) {
+                ctx.fillStyle = 'black';
+                ctx.font = '24px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click anywhere or press Space to start', ctx.canvas.width / 2, ctx.canvas.height - 100);
+            } else {
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('Click on bubbles to pop them!', ctx.canvas.width / 2, ctx.canvas.height - 100);
+            }
+        }
+
         // Session end handler
         function onSessionEnded() {
             xrSession = null;
@@ -912,7 +1269,44 @@
                     render2DId = null;
                     backToMainMenu();
                 }
+                if (currentGame === 'humandetector') {
+                    resetHumanDetectorGame();
+                }
                 currentGame = null;
+            }
+            
+            // Space bar to start human detector in 2D mode
+            if (e.key === ' ' && currentGame === 'humandetector' && !hdGameState.started) {
+                e.preventDefault();
+                startHumanDetectorGameplay();
+            }
+        });
+
+        // Click handler for 2D human detector
+        document.getElementById('game-canvas').addEventListener('click', (e) => {
+            if (currentGame !== 'humandetector') return;
+
+            if (!hdGameState.started) {
+                startHumanDetectorGameplay();
+            } else {
+                // Check if clicked on a bubble
+                const canvas = document.getElementById('game-canvas');
+                const rect = canvas.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                for (let i = hdGameState.bubbles.length - 1; i >= 0; i--) {
+                    const bubble = hdGameState.bubbles[i];
+                    const screenX = canvas.width / 2 + (bubble.x * 200);
+                    const screenY = canvas.height / 2 - (bubble.y * 200) + (bubble.z * 50);
+                    const screenRadius = Math.max(20, 50 / (Math.abs(bubble.z) + 1));
+
+                    const distance = Math.sqrt(Math.pow(x - screenX, 2) + Math.pow(y - screenY, 2));
+                    if (distance < screenRadius) {
+                        popBubble(i);
+                        break;
+                    }
+                }
             }
         });
 
